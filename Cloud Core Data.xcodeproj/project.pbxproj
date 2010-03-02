@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		51375B8C113D72E5008A3AB1 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51375B8B113D72E5008A3AB1 /* CoreFoundation.framework */; };
+		51375B90113D72EC008A3AB1 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51375B8F113D72EC008A3AB1 /* CoreData.framework */; };
 		519889A1113C39D700DFD4CA /* CCDSynchronizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 5198899F113C39D700DFD4CA /* CCDSynchronizer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		519889A2113C39D700DFD4CA /* CCDSynchronizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 519889A0113C39D700DFD4CA /* CCDSynchronizer.m */; };
-		519889F3113C3B2F00DFD4CA /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 519889F2113C3B2F00DFD4CA /* CoreData.framework */; };
 		AA747D9F0F9514B9006C5449 /* cloud_core_data_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = AA747D9E0F9514B9006C5449 /* cloud_core_data_Prefix.pch */; settings = {ATTRIBUTES = (Public, ); }; };
-		AACBBE4A0F95108600F1A2B1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AACBBE490F95108600F1A2B1 /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		51375B8B113D72E5008A3AB1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		51375B8F113D72EC008A3AB1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		5198899F113C39D700DFD4CA /* CCDSynchronizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCDSynchronizer.h; sourceTree = "<group>"; };
 		519889A0113C39D700DFD4CA /* CCDSynchronizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CCDSynchronizer.m; sourceTree = "<group>"; };
-		519889F2113C3B2F00DFD4CA /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		AA747D9E0F9514B9006C5449 /* cloud_core_data_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cloud_core_data_Prefix.pch; sourceTree = SOURCE_ROOT; };
-		AACBBE490F95108600F1A2B1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		D2AAC07E0554694100DB518D /* libcloud_core_data.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcloud_core_data.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -28,8 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AACBBE4A0F95108600F1A2B1 /* Foundation.framework in Frameworks */,
-				519889F3113C3B2F00DFD4CA /* CoreData.framework in Frameworks */,
+				51375B8C113D72E5008A3AB1 /* CoreFoundation.framework in Frameworks */,
+				51375B90113D72EC008A3AB1 /* CoreData.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -58,8 +58,8 @@
 		0867D69AFE84028FC02AAC07 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				AACBBE490F95108600F1A2B1 /* Foundation.framework */,
-				519889F2113C3B2F00DFD4CA /* CoreData.framework */,
+				51375B8B113D72E5008A3AB1 /* CoreFoundation.framework */,
+				51375B8F113D72EC008A3AB1 /* CoreData.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -185,7 +185,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
-				SDKROOT = iphoneos3.1.3;
+				SDKROOT = iphoneos3.0;
 			};
 			name = Debug;
 		};
@@ -198,7 +198,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
-				SDKROOT = iphoneos3.1.3;
+				SDKROOT = iphoneos3.0;
 			};
 			name = Release;
 		};
