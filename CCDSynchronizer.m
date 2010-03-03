@@ -21,7 +21,7 @@
 #pragma mark Synchronization Methods
 
 // This needs to appear before being referenced later
-NSInteger intIDSort(id num1, id num2, void *context)
+NSInteger intSort(id num1, id num2, void *context)
 {
     int v1 = [num1 intValue];
     int v2 = [num2 intValue];
@@ -85,7 +85,7 @@ NSInteger intIDSort(id num1, id num2, void *context)
 	NSDictionary *updatedEntityData = [updateDictionary objectForKey:@"entityData"];
 	
 	NSArray *updatedEntityIDs = [[updatedEntityData allKeys]
-						  sortedArrayUsingFunction:intIDSort context:NULL];
+						  sortedArrayUsingFunction:intSort context:NULL];
 	
 	// create the fetch request to get all Stories matching the IDs
 	[self managedObjectContext];
