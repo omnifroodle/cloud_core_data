@@ -2,8 +2,7 @@
 //  CCDSynchronizer.h
 //  Cloud Core Data
 //
-//  Created by Christopher Bradford on 3/1/10.
-//  Copyright 2010 INM United. All rights reserved.
+//  Copyright 2010 Matt Overstreet and Christopher Bradford.  All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
