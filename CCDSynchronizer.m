@@ -77,7 +77,7 @@
 	
 	// Perform the fetch request
 	NSError *error;
-	NSArray *localEntities = [managedObjectContext executeFetchRequest:localFetchRequest error:error];
+	NSArray *localEntities = [managedObjectContext executeFetchRequest:localFetchRequest error:&error];
 	
 	// Create Iterators to walk through the entities and perform the necessary actions (create, update, delete)
 	NSEnumerator *remoteEntityIDIterator = [remoteEntityIDs objectEnumerator];
@@ -88,7 +88,7 @@
 	NSNumber *remoteEntityID;
 	NSManagedObject *newLocalEntity;
 	
-	NSLog(@"Updating %@ Entities", [entityPayload objectForKey:@"entityName"])
+	NSLog(@"Updating %@ Entities", [entityPayload objectForKey:@"entityName"]);
 	
 	// Loop over the remote Entity IDs, if the item exists locally update it, if not create the local Entity
 	while (remoteEntityID = (NSNumber *)[remoteEntityIDIterator nextObject]) {
@@ -127,7 +127,7 @@
 
 	}
 	
-	NSLog(@"Finished Updating %@ Entities", [entityPayload objectForKey:@"entityName"])
+	NSLog(@"Finished Updating %@ Entities", [entityPayload objectForKey:@"entityName"]);
 	
 	// Actions are complete tell the persistent store to save the changes
 	if (![managedObjectContext save: &error]) {
