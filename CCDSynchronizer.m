@@ -19,21 +19,8 @@
 #pragma mark -
 #pragma mark Synchronization Methods
 
-// This needs to appear before being referenced later
-NSInteger intSort(id num1, id num2, void *context)
-{
-    int v1 = [num1 intValue];
-    int v2 = [num2 intValue];
-    if (v1 < v2)
-        return NSOrderedAscending;
-    else if (v1 > v2)
-        return NSOrderedDescending;
-    else
-        return NSOrderedSame;
-}
-
-- (void)synchronizeEntities: (NSArray *)entityNames {
-	NSEnumerator *entityEnumerator = [entityNames objectEnumerator];
+- (void)synchronizeEntities: (NSDictionary *)entityPayload {
+	NSEnumerator *entityEnumerator = [[entityPayload allKeys] objectEnumerator];
 	
 	NSString *entityName;
 	while (entityName = (NSString *)[entityEnumerator nextObject]) {
@@ -41,7 +28,7 @@ NSInteger intSort(id num1, id num2, void *context)
 		NSNumber *maxUpdated = [self getMaxUpdated:entityName];
 		NSLog(@"Entity: %@, Max Updated: %@", entityName, maxUpdated);
 		
-		NSDictionary *threadPayload = [NSDictionary dictionaryWithObjectsAndKeys:entityName, @"entityName", maxUpdated, @"maxUpdated", nil];
+		NSDictionary *threadPayload = [NSDictionary dictionaryWithObjectsAndKeys:entityName, @"entityName", maxUpdated, @"maxUpdated", [entityPayload objectForKey:entityName], @"entityURL", nil];
 		
 		// Spin off a thread to pull the updated items
 		[NSThread detachNewThreadSelector: @selector(synchronizeEntity:)
@@ -56,7 +43,7 @@ NSInteger intSort(id num1, id num2, void *context)
 	
 	// Fetch the updated entries
 	NSLog(@"Fetching %@ Entries", (NSString *)[syncData objectForKey:@"entityName"]);
-	NSDictionary *entityData = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@/%@.plist?last=%d", self.server, (NSString *)[syncData objectForKey:@"entityName"], [(NSNumber *)[syncData objectForKey:@"maxUpdated"] intValue]]]];
+	NSDictionary *entityData = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@%@?last=%d", self.server, (NSString *)[syncData objectForKey:@"entityURL"], [(NSNumber *)[syncData objectForKey:@"maxUpdated"] intValue]]]];
 	
 	// Return back to the main thread to update data
 	NSDictionary *updatePayload = [NSDictionary dictionaryWithObjectsAndKeys:[syncData objectForKey:@"entityName"], @"entityName", entityData, @"entityData", nil];
@@ -70,76 +57,80 @@ NSInteger intSort(id num1, id num2, void *context)
 }
 
 - (void)updateEntityData:(id)updatePayload {
-	if (updatePayload == nil) {
+	NSDictionary *entityPayload = (NSDictionary *)updatePayload;
+	NSDictionary *remoteEntities = [entityPayload objectForKey:@"entityData"];
+	
+	// If there are no records to process, do not continue
+	if (remoteEntities == nil) {
 		return;
 	}
 	
-	NSDictionary *updateDictionary = (NSDictionary *)updatePayload;
-	if ([updateDictionary objectForKey:@"entityData"] == nil) {
-		return;
-	}
+	// Retrieve a list of all of the Entity IDs for use in the search predicate
+	NSArray *remoteEntityIDs = [remoteEntities keysSortedByValueUsingSelector:@selector(compare:)];
 	
-	NSLog(@"Updating %@ Entities", [updateDictionary objectForKey:@"entityName"]);
+	// Build the fetch request to retrieve the items that exist locally
+	NSFetchRequest *localFetchRequest = [[[NSFetchRequest alloc] init] autorelease];
+	NSEntityDescription *entity = [NSEntityDescription entityForName:[entityPayload objectForKey:@"entityName"] inManagedObjectContext:managedObjectContext];
+	[localFetchRequest setEntity: entity];
+	[localFetchRequest setPredicate: [NSPredicate predicateWithFormat: @"(ccd_remote_id IN %@)", remoteEntityIDs]];
+	[localFetchRequest setSortDescriptors: [NSArray arrayWithObject: [[[NSSortDescriptor alloc] initWithKey: @"ccd_remote_id" ascending:YES] autorelease]]];
 	
-	NSDictionary *updatedEntityData = [updateDictionary objectForKey:@"entityData"];
-	
-	NSArray *updatedEntityIDs = [[updatedEntityData allKeys]
-						  sortedArrayUsingFunction:intSort context:NULL];
-	
-	// create the fetch request to get all Stories matching the IDs
-	[self managedObjectContext];
-	NSFetchRequest *fetchRequest = [[[NSFetchRequest alloc] init] autorelease];
-	NSEntityDescription *entity = [NSEntityDescription entityForName:[updateDictionary objectForKey:@"entityName"] inManagedObjectContext:managedObjectContext];
-	[fetchRequest setEntity: entity];
-	[fetchRequest setPredicate: [NSPredicate predicateWithFormat: @"(cdc_master_id IN %@)", updatedEntityIDs]];
-	
-	// make sure the results are sorted as well
-	[fetchRequest setSortDescriptors: [NSArray arrayWithObject:
-									   [[[NSSortDescriptor alloc] initWithKey: @"cdc_master_id"
-																	ascending:YES] autorelease]]];
+	// Perform the fetch request
 	NSError *error;
-	NSArray *matchedEntities = [managedObjectContext executeFetchRequest:fetchRequest error:&error];
+	NSArray *localEntities = [managedObjectContext executeFetchRequest:localFetchRequest error:error];
 	
-	NSEnumerator *updatedIterator = [updatedEntityIDs objectEnumerator];
-	NSEnumerator *localIterator = [matchedEntities objectEnumerator];
+	// Create Iterators to walk through the entities and perform the necessary actions (create, update, delete)
+	NSEnumerator *remoteEntityIDIterator = [remoteEntityIDs objectEnumerator];
+	NSEnumerator *localEntityIterator = [localEntities objectEnumerator];
 	
-	// iterate though the sorted arrays updating existing records or adding new ones
-	NSManagedObject *mo = [localIterator nextObject];
+	// Create "walker" values, values that change as we iterate over the loaded data
+	NSManagedObject *localEntity = (NSManagedObject *)[localEntityIterator nextObject];
+	NSNumber *remoteEntityID;
+	NSManagedObject *newLocalEntity;
 	
-	NSNumber *entityID;
-	NSManagedObject *newMo;
+	NSLog(@"Updating %@ Entities", [entityPayload objectForKey:@"entityName"])
 	
-	while (entityID = (NSNumber *)[updatedIterator nextObject]) {
-		NSMutableDictionary *validEntityData;
+	// Loop over the remote Entity IDs, if the item exists locally update it, if not create the local Entity
+	while (remoteEntityID = (NSNumber *)[remoteEntityIDIterator nextObject]) {
+		NSMutableDictionary *remoteEntityData = [remoteEntities objectForKey: remoteEntityID];
 		
-		if ((mo != nil) && ([entityID intValue] == [[mo valueForKey: @"cdc_master_id"] intValue])) {
-			if ([[validEntityData valueForKey: @"deleted"] boolValue]) {
-				// Entity Instance has been deleted
-				NSLog(@"Deleting %@: %@", [updateDictionary objectForKey:@"entityName"], entityID);
+		// Check to see if the current local entity matches our current remote entity
+		if (localEntity != nil && [remoteEntityID intValue] == [(NSNumber *)[localEntity valueForKey:@"ccd_remote_id"] intValue]) {
+			// The entity IDs match, determine if we should update or delete
+			if ([[remoteEntityData objectForKey:@"deleted"] boolValue]) {
+				NSLog(@"Deleting %@: %@", [entityPayload objectForKey:@"entityName"], remoteEntityID);
 				
-				[self.managedObjectContext deleteObject: mo];
+				// Delete the local Entity
+				[managedObjectContext deleteObject:localEntity];
 			}
 			else {
-				// Update the recipe
-				NSLog(@"Updating %@: %@", [updateDictionary objectForKey:@"entityName"], entityID);
-				// update the recipe with the new version
-				[mo setValuesForKeysWithDictionary:validEntityData];
-				mo = [localIterator nextObject];				
+				NSLog(@"Updating %@: %@", [entityPayload objectForKey:@"entityName"], remoteEntityID);
+				
+				// Remove the "deleted" key and update the local Entity
+				[remoteEntityData removeObjectForKey:@"deleted"];
+				[localEntity setValuesForKeysWithDictionary:remoteEntityData];
+				
+				// Retrieve the next local Entity to check against
+				localEntity = [localEntityIterator nextObject];
 			}
-		} else if(![[validEntityData valueForKey: @"deleted"] boolValue]) {
-			// Create the new entity instance
-			NSLog(@"Creating %@: %@", [updateDictionary objectForKey:@"entityName"], entityID);
-			newMo = [[NSManagedObject alloc] initWithEntity:entity
-							 insertIntoManagedObjectContext:managedObjectContext];
-			
-			[newMo setValuesForKeysWithDictionary:[updatedEntityData objectForKey:entityID]];
-			
-			[newMo release];
 		}
+		else if (![[remoteEntityData objectForKey:@"deleted"] boolValue]) {
+			NSLog(@"Creating %@: %@", [entityPayload objectForKey:@"entityName"], remoteEntityID);
+			
+			// Create the new local Entity
+			[remoteEntityData removeObjectForKey:@"deleted"];
+			newLocalEntity = [[NSManagedObject alloc] initWithEntity:entity 
+									  insertIntoManagedObjectContext:managedObjectContext];
+			[newLocalEntity setValuesForKeysWithDictionary:remoteEntityData];
+			[newLocalEntity release];
+		}
+
 	}
 	
-	// Updates have been performed update the persistant store
-	if (![self.managedObjectContext save: &error]) {
+	NSLog(@"Finished Updating %@ Entities", [entityPayload objectForKey:@"entityName"])
+	
+	// Actions are complete tell the persistent store to save the changes
+	if (![managedObjectContext save: &error]) {
 		NSLog(@"Could not save updates to the persistant store. Error: %@", error);
 	}
 }

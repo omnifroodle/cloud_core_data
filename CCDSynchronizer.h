@@ -17,7 +17,7 @@
 @property (nonatomic, retain, readonly) NSManagedObjectContext *managedObjectContext;
 @property (nonatomic, retain, readonly) NSString *server;
 
-- (void)synchronizeEntities: (NSArray *)entityNames;
+- (void)synchronizeEntities: (NSDictionary *)entityPayload;
 - (NSNumber *)getMaxUpdated:(NSString *)entity;
 
 - (id)initWithManagedObjectContext: (NSManagedObjectContext *)context onServer: (NSString *)remote;
