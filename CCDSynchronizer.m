@@ -66,7 +66,7 @@
 	}
 	
 	// Retrieve a list of all of the Entity IDs for use in the search predicate
-	NSArray *remoteEntityIDs = [remoteEntities keysSortedByValueUsingSelector:@selector(compare:)];
+	NSArray *remoteEntityIDs = [[remoteEntities allKeys] sortedArrayUsingSelector:@selector(compare:)];
 	
 	// Build the fetch request to retrieve the items that exist locally
 	NSFetchRequest *localFetchRequest = [[[NSFetchRequest alloc] init] autorelease];
@@ -109,10 +109,10 @@
 				// Remove the "deleted" key and update the local Entity
 				[remoteEntityData removeObjectForKey:@"deleted"];
 				[localEntity setValuesForKeysWithDictionary:remoteEntityData];
-				
-				// Retrieve the next local Entity to check against
-				localEntity = [localEntityIterator nextObject];
 			}
+			
+			// Retrieve the next local Entity to check against
+			localEntity = [localEntityIterator nextObject];
 		}
 		else if (![[remoteEntityData objectForKey:@"deleted"] boolValue]) {
 			NSLog(@"Creating %@: %@", [entityPayload objectForKey:@"entityName"], remoteEntityID);
