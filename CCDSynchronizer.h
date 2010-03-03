@@ -12,13 +12,15 @@
 
 @interface CCDSynchronizer : NSObject {
 	NSManagedObjectContext *managedObjectContext;
+	NSString *server;
 }
 
 @property (nonatomic, retain, readonly) NSManagedObjectContext *managedObjectContext;
+@property (nonatomic, retain, readonly) NSString *server;
 
 - (void)synchronizeEntities: (NSArray *)entityNames;
 - (NSNumber *)getMaxUpdated:(NSString *)entity;
 
-- (id)initWithManagedObjectContext: (NSManagedObjectContext *)context;
+- (id)initWithManagedObjectContext: (NSManagedObjectContext *)context onServer: (NSString *)remote;
 
 @end
