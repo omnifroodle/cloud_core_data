@@ -9,16 +9,18 @@
 /* Begin PBXBuildFile section */
 		51375B8C113D72E5008A3AB1 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51375B8B113D72E5008A3AB1 /* CoreFoundation.framework */; };
 		51375B90113D72EC008A3AB1 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51375B8F113D72EC008A3AB1 /* CoreData.framework */; };
-		519889A1113C39D700DFD4CA /* CCDSynchronizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 5198899F113C39D700DFD4CA /* CCDSynchronizer.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		519889A2113C39D700DFD4CA /* CCDSynchronizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 519889A0113C39D700DFD4CA /* CCDSynchronizer.m */; };
+		51C056AA114013090094085D /* CCDSynchronizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 51C056A8114013090094085D /* CCDSynchronizer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		51C056AB114013090094085D /* CCDSynchronizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 51C056A9114013090094085D /* CCDSynchronizer.m */; };
+		51C0572411401AD10094085D /* CCDSynchronizerDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 51C0572311401AD10094085D /* CCDSynchronizerDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA747D9F0F9514B9006C5449 /* cloud_core_data_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = AA747D9E0F9514B9006C5449 /* cloud_core_data_Prefix.pch */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		51375B8B113D72E5008A3AB1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		51375B8F113D72EC008A3AB1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
-		5198899F113C39D700DFD4CA /* CCDSynchronizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCDSynchronizer.h; sourceTree = "<group>"; };
-		519889A0113C39D700DFD4CA /* CCDSynchronizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CCDSynchronizer.m; sourceTree = "<group>"; };
+		51C056A8114013090094085D /* CCDSynchronizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CCDSynchronizer.h; path = Classes/CCDSynchronizer.h; sourceTree = "<group>"; };
+		51C056A9114013090094085D /* CCDSynchronizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CCDSynchronizer.m; path = Classes/CCDSynchronizer.m; sourceTree = "<group>"; };
+		51C0572311401AD10094085D /* CCDSynchronizerDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCDSynchronizerDelegate.h; sourceTree = "<group>"; };
 		AA747D9E0F9514B9006C5449 /* cloud_core_data_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cloud_core_data_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		D2AAC07E0554694100DB518D /* libcloud_core_data.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcloud_core_data.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -67,8 +69,9 @@
 		08FB77AEFE84172EC02AAC07 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				5198899F113C39D700DFD4CA /* CCDSynchronizer.h */,
-				519889A0113C39D700DFD4CA /* CCDSynchronizer.m */,
+				51C056A8114013090094085D /* CCDSynchronizer.h */,
+				51C056A9114013090094085D /* CCDSynchronizer.m */,
+				51C0572311401AD10094085D /* CCDSynchronizerDelegate.h */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -89,7 +92,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA747D9F0F9514B9006C5449 /* cloud_core_data_Prefix.pch in Headers */,
-				519889A1113C39D700DFD4CA /* CCDSynchronizer.h in Headers */,
+				51C056AA114013090094085D /* CCDSynchronizer.h in Headers */,
+				51C0572411401AD10094085D /* CCDSynchronizerDelegate.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,7 +140,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				519889A2113C39D700DFD4CA /* CCDSynchronizer.m in Sources */,
+				51C056AB114013090094085D /* CCDSynchronizer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -181,6 +185,7 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = 4.2;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				OTHER_LDFLAGS = "-ObjC";
@@ -194,6 +199,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_VERSION = 4.2;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				OTHER_LDFLAGS = "-ObjC";

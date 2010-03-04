@@ -6,7 +6,7 @@
 //
 
 #import "CCDSynchronizer.h"
-
+#import "CCDSynchronizerDelegate.h"
 
 @implementation CCDSynchronizer
 
@@ -15,11 +15,12 @@
 
 @synthesize managedObjectContext;
 @synthesize server;
+@synthesize delegate;
 
 #pragma mark -
 #pragma mark Synchronization Methods
 
-- (void)synchronizeEntities: (NSDictionary *)entityPayload {
+- (void)synchronizeEntities: (NSDictionary *)entityPayload inParallel: (BOOL)parallel {
 	NSEnumerator *entityEnumerator = [[entityPayload allKeys] objectEnumerator];
 	
 	NSString *entityName;
@@ -28,11 +29,23 @@
 		NSNumber *maxUpdated = [self getMaxUpdated:entityName];
 		NSLog(@"Entity: %@, Max Updated: %@", entityName, maxUpdated);
 		
-		NSDictionary *threadPayload = [NSDictionary dictionaryWithObjectsAndKeys:entityName, @"entityName", maxUpdated, @"maxUpdated", [entityPayload objectForKey:entityName], @"entityURL", nil];
+		NSDictionary *threadPayload = [NSDictionary dictionaryWithObjectsAndKeys:
+											entityName, @"entityName", 
+											maxUpdated, @"maxUpdated", 
+											[entityPayload objectForKey:entityName], @"entityURL", nil];
 		
 		// Spin off a thread to pull the updated items
-		[NSThread detachNewThreadSelector: @selector(synchronizeEntity:)
-								 toTarget: self withObject: threadPayload];
+		if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeEntity:)]) {
+			[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeEntity: entityName];
+		}
+		
+		if (parallel) {
+			[NSThread detachNewThreadSelector: @selector(synchronizeEntity:)
+									 toTarget: self withObject: threadPayload];
+		}
+		else {
+			[self performSelectorOnMainThread:@selector(synchronizeEntity:) withObject:threadPayload waitUntilDone:YES];
+		}
 	}
 }
 
@@ -53,7 +66,10 @@
 	[entityPool drain];
 	[entityPool release];
 	
-    [NSThread exit];
+	// If we are performing the tasks on the MainThread
+	if(![NSThread isMainThread]) {
+		[NSThread exit];
+	}
 }
 
 - (void)updateEntityData:(id)updatePayload {
