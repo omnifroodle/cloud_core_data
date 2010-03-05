@@ -10,18 +10,27 @@
 
 @interface CCDSynchronizer : NSObject {
 	NSManagedObjectContext *managedObjectContext;
-	NSString *server;
+	NSString *source_root;
+	
+	NSMutableArray *proceduralEntities;
+	NSMutableSet *parallelEntities;
 	
 	id delegate;
 }
 
-@property (nonatomic, retain, readonly) NSManagedObjectContext *managedObjectContext;
-@property (nonatomic, retain, readonly) NSString *server;
+@property (nonatomic, retain) NSManagedObjectContext *managedObjectContext;
+@property (nonatomic, retain) NSString *source_root;
 @property (nonatomic, assign) id delegate;
 
-- (void)synchronizeEntities: (NSDictionary *)entityPayload inParallel: (BOOL)parallel;
+- (void)synchronizeEntities;
+- (void)synchronizeParallelEntities;
+- (void)synchronizeProceduralEntities;
+- (void) synchronizeEntity:(NSDictionary *)entity inParallel:(BOOL)parallel;
+
 - (NSNumber *)getMaxUpdated:(NSString *)entity;
 
-- (id)initWithManagedObjectContext: (NSManagedObjectContext *)context onServer: (NSString *)remote;
+- (void)addEntity:(NSString *)entityName atPath:(NSString *)path inParallel:(BOOL)parallel;
+- (void)addProceduralEntity:(NSString *)entityName atPath:(NSString *)path;
+- (void)addParallelEntity:(NSString *)entityName atPath:(NSString *)path;
 
 @end

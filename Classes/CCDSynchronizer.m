@@ -14,49 +14,104 @@
 #pragma mark Synthesized Properties
 
 @synthesize managedObjectContext;
-@synthesize server;
+@synthesize source_root;
 @synthesize delegate;
+
+#pragma mark -
+#pragma mark Sort Function
+
+NSInteger intSort(id num1, id num2, void *context)
+{
+    int v1 = [num1 intValue];
+    int v2 = [num2 intValue];
+    if (v1 < v2)
+        return NSOrderedAscending;
+    else if (v1 > v2)
+        return NSOrderedDescending;
+    else
+        return NSOrderedSame;
+}
+
+#pragma mark -
+#pragma mark Entity Management Methods
+
+- (void)addEntity:(NSString *)entityName atPath:(NSString *)path inParallel:(BOOL)parallel {
+	if (parallel) {
+		[self addParallelEntity:entityName atPath:path];
+	}
+	else {
+		[self addProceduralEntity:entityName atPath:path];
+	}
+}
+
+- (void)addParallelEntity:(NSString *)entityName atPath:(NSString *)path {
+	[parallelEntities addObject:[NSDictionary dictionaryWithObjectsAndKeys: entityName, @"entityName", path, @"entityPath", nil]];
+}
+
+- (void)addProceduralEntity:(NSString *)entityName atPath:(NSString *)path {
+	[proceduralEntities addObject:[NSDictionary dictionaryWithObjectsAndKeys: entityName, @"entityName", path, @"entityPath", nil]];
+}
 
 #pragma mark -
 #pragma mark Synchronization Methods
 
-- (void)synchronizeEntities: (NSDictionary *)entityPayload inParallel: (BOOL)parallel {
-	NSEnumerator *entityEnumerator = [[entityPayload allKeys] objectEnumerator];
+- (void)synchronizeEntities {
+	// Start synchronizing parallel entities
+	[self synchronizeParallelEntities];
 	
-	NSString *entityName;
-	while (entityName = (NSString *)[entityEnumerator nextObject]) {
-		// Retrieve the max updated timestamp
-		NSNumber *maxUpdated = [self getMaxUpdated:entityName];
-		NSLog(@"Entity: %@, Max Updated: %@", entityName, maxUpdated);
-		
-		NSDictionary *threadPayload = [NSDictionary dictionaryWithObjectsAndKeys:
-											entityName, @"entityName", 
-											maxUpdated, @"maxUpdated", 
-											[entityPayload objectForKey:entityName], @"entityURL", nil];
-		
-		// Spin off a thread to pull the updated items
-		if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeEntity:)]) {
-			[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeEntity: entityName];
-		}
-		
-		if (parallel) {
-			[NSThread detachNewThreadSelector: @selector(synchronizeEntity:)
-									 toTarget: self withObject: threadPayload];
-		}
-		else {
-			[self performSelectorOnMainThread:@selector(synchronizeEntity:) withObject:threadPayload waitUntilDone:YES];
-		}
+	// Start synchronizing procedural entities
+	[self synchronizeProceduralEntities];
+}
+
+- (void)synchronizeParallelEntities {
+	// Traverse the set and start spinning of threads
+	NSEnumerator *enumerator = [parallelEntities objectEnumerator];
+	
+	NSDictionary *entity;
+	while (entity = (NSDictionary *)[enumerator nextObject]) {
+		[self synchronizeEntity: entity inParallel: YES];
 	}
 }
 
--(void) synchronizeEntity:(id)payload {
+- (void)synchronizeProceduralEntities {
+	NSDictionary *entity = (NSDictionary *)[proceduralEntities lastObject];
+	
+	if (entity != nil) {
+		[proceduralEntities removeLastObject];
+		[self synchronizeEntity: entity inParallel:NO];
+	}
+}
+
+- (void)synchronizeEntity:(NSDictionary *)entity inParallel: (BOOL)parallel {
+	NSMutableDictionary *entityPayload = [NSMutableDictionary dictionaryWithDictionary:entity];
+	NSString *entityName = [entity objectForKey:@"entityName"];
+	
+	// Retrieve the max updated timestamp
+	[entityPayload setObject:[self getMaxUpdated:entityName] forKey:@"maxUpdated"];
+	NSLog(@"Entity: %@, Max Updated: %@", entityName, [entityPayload objectForKey:@"maxUpdated"]);
+	
+	// Spin off a thread to pull the updated items
+	if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeEntity:)]) {
+		[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeEntity: entityName];
+	}
+	
+	if (parallel) {
+		[NSThread detachNewThreadSelector: @selector(fetchEntity:)
+								 toTarget: self withObject: entityPayload];
+	}
+	else {
+		[self performSelectorOnMainThread:@selector(fetchEntity:) withObject:entityPayload waitUntilDone:YES];
+	}
+}
+
+- (void)fetchEntity:(id)payload {
 	NSDictionary *syncData = (NSDictionary *) payload;
 	
     NSAutoreleasePool *entityPool = [[NSAutoreleasePool alloc] init];
 	
 	// Fetch the updated entries
 	NSLog(@"Fetching %@ Entries", (NSString *)[syncData objectForKey:@"entityName"]);
-	NSDictionary *entityData = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@%@?last=%d", self.server, (NSString *)[syncData objectForKey:@"entityURL"], [(NSNumber *)[syncData objectForKey:@"maxUpdated"] intValue]]]];
+	NSDictionary *entityData = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@%@?last=%d", self.source_root, (NSString *)[syncData objectForKey:@"entityPath"], [(NSNumber *)[syncData objectForKey:@"maxUpdated"] intValue]]]];
 	
 	// Return back to the main thread to update data
 	NSDictionary *updatePayload = [NSDictionary dictionaryWithObjectsAndKeys:[syncData objectForKey:@"entityName"], @"entityName", entityData, @"entityData", nil];
@@ -70,6 +125,9 @@
 	if(![NSThread isMainThread]) {
 		[NSThread exit];
 	}
+	else {
+		[self synchronizeProceduralEntities];
+	}
 }
 
 - (void)updateEntityData:(id)updatePayload {
@@ -82,7 +140,7 @@
 	}
 	
 	// Retrieve a list of all of the Entity IDs for use in the search predicate
-	NSArray *remoteEntityIDs = [[remoteEntities allKeys] sortedArrayUsingSelector:@selector(compare:)];
+	NSArray *remoteEntityIDs = [[remoteEntities allKeys] sortedArrayUsingFunction:intSort context:NULL];
 	
 	// Build the fetch request to retrieve the items that exist locally
 	NSFetchRequest *localFetchRequest = [[[NSFetchRequest alloc] init] autorelease];
@@ -198,23 +256,15 @@
 #pragma mark -
 #pragma mark NSObject Methods
 
-- (id)initWithManagedObjectContext: (NSManagedObjectContext *)context onServer: (NSString *)remoteServer {
-	self = [self init];
-	
-	if (self != nil) {
-		managedObjectContext = context;
-		server = remoteServer;
-	}
-	
-	return self;
-}
-
 - (id)init {
 	self = [super init];
 	
 	if (self != nil) {
 		managedObjectContext = nil;
-		server = nil;
+		source_root = nil;
+		
+		parallelEntities = [[NSMutableSet alloc] init];
+		proceduralEntities = [[NSMutableArray alloc] init];
 	}
 	
 	return self;
@@ -222,6 +272,10 @@
 
 - (void)dealloc {
 	[managedObjectContext release];
+	[source_root release];
+	
+	[parallelEntities release];
+	[proceduralEntities release];
 	
 	[super dealloc];
 }
