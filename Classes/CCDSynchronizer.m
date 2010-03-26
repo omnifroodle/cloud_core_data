@@ -74,11 +74,20 @@ NSInteger intSort(id num1, id num2, void *context)
 }
 
 - (void)synchronizeProceduralEntities {
+	if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeProceduralEntities:)]) {
+		[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeProceduralEntities: proceduralEntities];
+	}
+	
 	NSDictionary *entity = (NSDictionary *)[proceduralEntities lastObject];
 	
 	if (entity != nil) {
 		[proceduralEntities removeLastObject];
 		[self synchronizeEntity: entity inParallel:NO];
+	}
+	else {
+		if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:didSynchronizeProceduralEntities:)]) {
+			[(id<CCDSynchronizerDelegate>)delegate synchronizer: self didSynchronizeProceduralEntities: proceduralEntities];
+		}
 	}
 }
 
@@ -175,14 +184,30 @@ NSInteger intSort(id num1, id num2, void *context)
 				NSLog(@"Deleting %@: %@", [entityPayload objectForKey:@"entityName"], remoteEntityID);
 				
 				// Delete the local Entity
+				if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeEntity:element:withAction:)]) {
+					[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeEntity: [entityPayload objectForKey:@"entityName"] element:localEntity withAction:@"Delete"];
+				}
+				
 				[managedObjectContext deleteObject:localEntity];
+				
+				if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:didSynchronizeEntity:element:withAction:)]) {
+					[(id<CCDSynchronizerDelegate>)delegate synchronizer: self didSynchronizeEntity: [entityPayload objectForKey:@"entityName"] element:nil withAction:@"Delete"];
+				}
 			}
 			else {
 				NSLog(@"Updating %@: %@", [entityPayload objectForKey:@"entityName"], remoteEntityID);
 				
 				// Remove the "deleted" key and update the local Entity
+				if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeEntity:element:withAction:)]) {
+					[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeEntity: [entityPayload objectForKey:@"entityName"] element:localEntity withAction:@"Update"];
+				}
+				
 				[remoteEntityData removeObjectForKey:@"deleted"];
 				[localEntity setValuesForKeysWithDictionary:remoteEntityData];
+				
+				if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:didSynchronizeEntity:element:withAction:)]) {
+					[(id<CCDSynchronizerDelegate>)delegate synchronizer: self didSynchronizeEntity: [entityPayload objectForKey:@"entityName"] element:localEntity withAction:@"Update"];
+				}
 			}
 			
 			// Retrieve the next local Entity to check against
@@ -195,7 +220,17 @@ NSInteger intSort(id num1, id num2, void *context)
 			[remoteEntityData removeObjectForKey:@"deleted"];
 			newLocalEntity = [[NSManagedObject alloc] initWithEntity:entity 
 									  insertIntoManagedObjectContext:managedObjectContext];
+			
+			if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:willSynchronizeEntity:element:withAction:)]) {
+				[(id<CCDSynchronizerDelegate>)delegate synchronizer: self willSynchronizeEntity: [entityPayload objectForKey:@"entityName"] element:newLocalEntity withAction:@"Create"];
+			}
+			
 			[newLocalEntity setValuesForKeysWithDictionary:remoteEntityData];
+			
+			if (delegate != nil && [delegate respondsToSelector:@selector(synchronizer:didSynchronizeEntity:element:withAction:)]) {
+				[(id<CCDSynchronizerDelegate>)delegate synchronizer: self didSynchronizeEntity: [entityPayload objectForKey:@"entityName"] element:newLocalEntity withAction:@"Create"];
+			}
+			
 			[newLocalEntity release];
 		}
 
