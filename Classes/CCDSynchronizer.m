@@ -116,7 +116,7 @@ NSInteger intSort(id num1, id num2, void *context)
 - (void)fetchEntity:(id)payload {
 	NSDictionary *syncData = (NSDictionary *) payload;
 	
-    NSAutoreleasePool *entityPool = [[NSAutoreleasePool alloc] init];
+  NSAutoreleasePool *entityPool = [[NSAutoreleasePool alloc] init];
 	
 	// Fetch the updated entries
 	NSLog(@"Fetching %@ Entries", (NSString *)[syncData objectForKey:@"entityName"]);
@@ -124,7 +124,7 @@ NSInteger intSort(id num1, id num2, void *context)
 	
 	// Return back to the main thread to update data
 	NSDictionary *updatePayload = [NSDictionary dictionaryWithObjectsAndKeys:[syncData objectForKey:@"entityName"], @"entityName", entityData, @"entityData", nil];
-	[self performSelectorOnMainThread:@selector(updateEntityData:) withObject:updatePayload waitUntilDone:YES];
+	[self performSelectorOnMainThread:@selector(updateEntityData:) withObject:[updatePayload copy] waitUntilDone:YES];
 	
 	// Drain the pool and stop the thread
 	[entityPool drain];
